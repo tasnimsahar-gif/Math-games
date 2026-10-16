@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>بازی تعاملی اعداد گویا</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    font-family: 'Tahoma', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 8px;
+    touch-action: manipulation;
+  }
+  .game-container {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 14px;
+  }
+
+  .teacher-bar {
+    background: linear-gradient(90deg, #764ba2, #667eea);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    box-shadow: 0 3px 10px rgba(118,75,162,0.3);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed #764ba2;
+    margin-bottom: 8px;
+  }
+  .header h1 { font-size: 1em; color: #764ba2; }
+  .score-box {
+    background: #764ba2;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-weight: bold;
+    font-size: 0.85em;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78em;
+    color: #555;
+    margin-bottom: 4px;
+  }
+  .progress {
+    height: 6px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #764ba2, #667eea);
+    transition: width 0.5s;
+    width: 0%;
+  }
+
+  .question-box {
+    background: #f7f5ff;
+    border-radius: 12px;
+    padding: 10px;
+    margin: 6px 0;
+    text-align: center;
+    border: 2px solid #e0d7ff;
+  }
+  .question-text {
+    font-size: 0.95em;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    font-weight: bold;
+  }
+
+  .frac {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+    margin: 0 4px;
+    line-height: 1.05;
+    font-weight: bold;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  .frac .num { display: block; padding: 0 6px 1px 6px; }
+  .frac .den { display: block; padding: 1px 6px 0 6px; border-top: 2px solid currentColor; }
+
+  .mixed {
+    display: inline-block;
+    vertical-align: middle;
+    direction: ltr;
+    unicode-bidi: isolate;
+    margin: 0 4px;
+    white-space: nowrap;
+  }
+  .mixed .whole {
+    display: inline-block;
+    font-weight: bold;
+    vertical-align: middle;
+    margin-right: 3px;
+  }
+  .mixed .frac { margin: 0; }
+
+  .op-symbol {
+    display: inline-block;
+    margin: 0 8px;
+    font-size: 1.3em;
+    color: #764ba2;
+    font-weight: bold;
+    vertical-align: middle;
+  }
+
+  .visual-area {
+    min-height: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+    padding: 10px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px dashed #ccc;
+  }
+
+  /* ⭐ میله با خطوط جداکننده واضح و ضخیم */
+  .bar {
+    height: 34px;
+    border: 3px solid #333;
+    border-radius: 6px;
+    display: flex;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .bar-seg {
+    flex: 1;
+    min-width: 14px;
+    border-left: 2px solid #333;
+    transition: background 0.3s;
+  }
+  .bar-seg:first-child { border-left: none; }
+  .bar-seg.fill-purple { background: #764ba2; }
+  .bar-seg.fill-green { background: #27ae60; }
+  .bar-seg.fill-orange { background: #f39c12; }
+  .bar-seg.fill-red { background: #e74c3c; }
+  .bar-seg.fill-blue { background: #3498db; }
+
+  /* ⭐ تخته شکلات: خانه‌های رنگ‌نشده کرم روشن با کادر قهوه‌ای واضح */
+  .chocolate {
+    display: grid;
+    gap: 3px;
+    padding: 5px;
+    background: #654321;
+    border-radius: 6px;
+    border: 2px solid #3d2817;
+  }
+  .choc-piece {
+    width: 26px;
+    height: 26px;
+    background: #fdf6e3;                     /* ⭐ کرم روشن (رنگ‌نشده) */
+    border-radius: 3px;
+    border: 2px solid #8B4513;               /* ⭐ کادر قهوه‌ای تیره و ضخیم */
+    box-shadow: inset 0 0 0 1px #d4b896;     /* ⭐ خط داخلی برای عمق */
+    transition: all 0.3s;
+  }
+  .choc-piece.on {                            /* ⭐ خورده‌شده */
+    background: #764ba2;
+    border-color: #4a2e6b;
+    box-shadow: inset 0 0 0 1px #9b6fc4;
+  }
+  .choc-piece.on-green {                      /* ⭐ باقی‌مانده */
+    background: #27ae60;
+    border-color: #1b5e20;
+    box-shadow: inset 0 0 0 1px #5fd08a;
+  }
+
+  .visual-label {
+    font-size: 0.78em;
+    color: #555;
+    text-align: center;
+    width: 100%;
+    margin-top: 4px;
+    font-weight: bold;
+    line-height: 1.6;
+  }
+  .visual-caption {
+    font-size: 0.72em;
+    color: #764ba2;
+    text-align: center;
+    width: 100%;
+    margin-top: 6px;
+    font-weight: bold;
+    padding: 5px 10px;
+    background: #f3e5f5;
+    border-radius: 8px;
+    line-height: 1.6;
+  }
+
+  .division-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px;
+    background: #fff8e1;
+    border-radius: 10px;
+    border: 2px dashed #f39c12;
+  }
+  .div-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .div-label {
+    font-size: 0.75em;
+    color: #555;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .equation-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+    padding: 12px;
+    background: #fff8e1;
+    border-radius: 12px;
+    border: 2px solid #ffd54f;
+    direction: ltr;
+    min-height: 70px;
+  }
+  .equation-area .frac { font-size: 1.15em; }
+  .equation-area .mixed .whole { font-size: 1.15em; }
+
+  .drop-slot {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 4px;
+    min-width: 70px;
+    min-height: 62px;
+    border: 3px dashed #764ba2;
+    border-radius: 10px;
+    background: rgba(118, 75, 162, 0.08);
+    font-size: 1.15em;
+    transition: all 0.2s;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #764ba2;
+    position: relative;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(118, 75, 162, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(118, 75, 162, 0); }
+  }
+  .drop-slot.dragover {
+    background: #ffe0b2;
+    border-color: #f39c12;
+    transform: scale(1.1);
+    animation: none;
+  }
+  .drop-slot.filled {
+    border-style: solid;
+    border-color: #27ae60;
+    background: #e8f5e9;
+    color: #1b5e20;
+    animation: none;
+  }
+  .drop-slot.wrong {
+    border-color: #e74c3c;
+    background: #ffebee;
+    color: #e74c3c;
+    animation: shake 0.5s;
+  }
+  .drop-slot.correct {
+    border-color: #27ae60;
+    background: #c8e6c9;
+    color: #1b5e20;
+    animation: none;
+  }
+  .drop-slot .slot-hint {
+    font-size: 0.6em;
+    color: #999;
+    font-weight: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .slot-frac {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+    line-height: 1.05;
+    direction: ltr;
+    margin: 0;
+  }
+  .slot-frac .num { display: block; padding: 0 5px 1px 5px; }
+  .slot-frac .den { display: block; padding: 1px 5px 0 5px; border-top: 2px solid currentColor; }
+
+  .draggables-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0;
+    padding: 12px 10px 10px 10px;
+    background: #e8eaf6;
+    border-radius: 12px;
+    border: 2px solid #9fa8da;
+    min-height: 60px;
+    position: relative;
+  }
+  .draggables-area::before {
+    content: '👇 گزینه‌ها را بکشید یا روی آن‌ها ضربه بزنید';
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    background: #e8eaf6;
+    color: #5c6bc0;
+    font-size: 0.7em;
+    padding: 0 6px;
+    font-weight: bold;
+  }
+  .draggable {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    background: #fff;
+    border: 3px solid #764ba2;
+    border-radius: 10px;
+    cursor: grab;
+    user-select: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #764ba2;
+    transition: all 0.15s;
+    touch-action: none;
+    box-shadow: 0 3px 0 #764ba2;
+    min-height: 48px;
+    min-width: 60px;
+    direction: ltr;
+  }
+  .draggable:active {
+    cursor: grabbing;
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #764ba2;
+  }
+  .draggable.used {
+    opacity: 0.25;
+    pointer-events: none;
+    box-shadow: none;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 8px 0;
+    border-radius: 12px;
+  }
+  .btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95em;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: inherit;
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 180px;
+  }
+  .btn-check {
+    background: #27ae60;
+    color: #fff;
+    box-shadow: 0 4px 0 #1e8449;
+  }
+  .btn-check:not(:disabled):active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #1e8449;
+  }
+  .btn-check:disabled {
+    background: #ccc;
+    box-shadow: 0 4px 0 #999;
+    cursor: default;
+  }
+  .btn-next {
+    background: #764ba2;
+    color: #fff;
+    display: none;
+    box-shadow: 0 4px 0 #5a3780;
+  }
+  .btn-next.show { display: block; animation: fadeIn 0.4s; }
+  .btn-reset {
+    background: #f39c12;
+    color: #fff;
+    box-shadow: 0 4px 0 #d68910;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px);}
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .feedback {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.9em;
+    display: none;
+    text-align: right;
+    line-height: 2;
+  }
+  .feedback.show { display: block; animation: fadeIn 0.4s; }
+  .feedback.ok { background: #d4edda; color: #155724; border-right: 4px solid #27ae60; }
+  .feedback.no { background: #f8d7da; color: #721c24; border-right: 4px solid #e74c3c; }
+  .feedback .frac { font-size: 1em; }
+
+  .end-screen { text-align: center; padding: 30px 15px; }
+  .end-screen h2 { color: #764ba2; margin-bottom: 15px; font-size: 1.5em; }
+  .end-screen p { font-size: 1em; color: #333; margin: 8px 0; }
+  .restart-btn {
+    margin-top: 18px;
+    padding: 14px 30px;
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: inherit;
+  }
+
+  .hint {
+    font-size: 0.78em;
+    color: #666;
+    margin-top: 6px;
+    line-height: 2;
+    text-align: right;
+    padding: 0 4px;
+  }
+
+  .math-ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+  }
+
+  @media (max-width: 500px) {
+    .game-container { padding: 10px; }
+    .question-text { font-size: 0.88em; }
+    .equation-area { padding: 8px; min-height: 60px; }
+    .equation-area .frac { font-size: 1em; }
+    .draggable { padding: 6px 10px; font-size: 1em; min-height: 42px; }
+    .choc-piece { width: 20px; height: 20px; border-width: 1.5px; }
+    .drop-slot { min-width: 60px; min-height: 52px; font-size: 1em; }
+    .bar { height: 28px; }
+    .bar-seg { min-width: 12px; }
+    .teacher-bar { font-size: 0.8em; padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+  <div class="teacher-bar">👩‍🏫 دبیر ریاضی: فاطمه مومنی</div>
+
+  <div class="header">
+    <h1>🎮 بازی اعداد گویا</h1>
+    <div class="score-box">⭐ <span id="score">۰</span></div>
+  </div>
+
+  <div class="progress-info">
+    <span id="qNum">سوال ۱ از ۱۵</span>
+    <span id="accuracy">دقت: ۰٪</span>
+  </div>
+  <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="question-box">
+    <div class="question-text" id="questionText"></div>
+    <div class="visual-area" id="visualArea"></div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div class="equation-area" id="equationArea"></div>
+  <div class="draggables-area" id="draggablesArea"></div>
+
+  <div class="actions">
+    <button class="btn btn-check" id="checkBtn" disabled>✓ بررسی</button>
+    <button class="btn btn-reset" id="resetBtn">🔄 از نو</button>
+    <button class="btn btn-next" id="nextBtn">بعدی ➜</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============ ابزارهای ریاضی ============
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b) { const t = b; b = a % b; a = t; }
+    return a || 1;
+  }
+  function simplify(num, den) {
+    if (den === 0) return { n: NaN, d: 0 };
+    if (num === 0) return { n: 0, d: 1 };
+    const sign = (num < 0) !== (den < 0) ? -1 : 1;
+    num = Math.abs(num); den = Math.abs(den);
+    const g = gcd(num, den);
+    return { n: sign * (num / g), d: den / g };
+  }
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function toPersian(str) {
+    if (str === undefined || str === null) return '';
+    const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+    return String(str).replace(/\d/g, d => fa[+d]);
+  }
+  function toPersianDecimal(str) {
+    return toPersian(str).replace(/\./g, '٫');
+  }
+
+  function fracHTML(n, d, color) {
+    const sign = n < 0 ? '−' : '';
+    const colorStyle = color ? 'color:' + color + ';' : '';
+    return '<span class="frac" style="' + colorStyle + '">' +
+      '<span class="num">' + sign + toPersian(Math.abs(n)) + '</span>' +
+      '<span class="den">' + toPersian(d) + '</span>' +
+    '</span>';
+  }
+
+  function simpleFracHTML(n, d, color) {
+    const s = simplify(n, d);
+    if (s.d === 1) {
+      return '<span class="math-ltr" style="font-weight:bold;' + (color ? 'color:' + color + ';' : '') + '">' + toPersian(s.n) + '</span>';
+    }
+    return fracHTML(s.n, s.d, color);
+  }
+
+  function mixedFracHTML(w, n, d, color) {
+    if (n === 0) {
+      return '<span class="math-ltr" style="font-weight:bold;' + (color ? 'color:' + color + ';' : '') + '">' + toPersian(w) + '</span>';
+    }
+    if (w === 0) {
+      return fracHTML(n, d, color);
+    }
+    const colorStyle = color ? 'color:' + color + ';' : '';
+    return '<span class="mixed" style="' + colorStyle + '">' +
+      '<span class="whole">' + toPersian(w) + '</span>' +
+      fracHTML(n, d) +
+    '</span>';
+  }
+
+  function fracKey(n, d) {
+    const s = simplify(n, d);
+    return s.d === 1 ? String(s.n) : s.n + '/' + s.d;
+  }
+
+  function decFracHTML(dec) {
+    return '<span class="math-ltr" style="font-weight:bold;font-size:1.1em;color:#333;">' + toPersianDecimal(dec) + '</span>';
+  }
+  function decToFracHint(dec) {
+    const s = String(dec);
+    const idx = s.indexOf('.');
+    if (idx === -1) return '<span class="math-ltr">' + toPersianDecimal(dec) + '</span>';
+    const places = s.length - idx - 1;
+    const den = Math.pow(10, places);
+    const num = Math.round(dec * den);
+    return '<span class="math-ltr">' + toPersianDecimal(dec) + '</span> = ' + fracHTML(num, den);
+  }
+  function decToFracExplain(dec) {
+    const s = String(dec);
+    const idx = s.indexOf('.');
+    if (idx === -1) return '<b class="math-ltr">' + toPersianDecimal(dec) + '</b>';
+    const places = s.length - idx - 1;
+    const den = Math.pow(10, places);
+    const num = Math.round(dec * den);
+    const simp = simplify(num, den);
+    if (simp.d === 1) return '<b class="math-ltr">' + toPersianDecimal(dec) + '</b>';
+    return fracHTML(num, den) + (simp.d !== den ? ' = ' + simpleFracHTML(simp.n, simp.d) : '');
+  }
+
+  // ============ تولید سوال ============
+  const types = ['mult-frac','div-frac','mult-mixed','div-mixed','mult-dec','div-dec'];
+
+  function generateQuestion() {
+    const type = types[randInt(0, types.length - 1)];
+    let q = {};
+
+    if (type === 'mult-frac') {
+      const b = randInt(2, 5), d = randInt(2, 5);
+      const a = randInt(1, b - 1), c = randInt(1, d - 1);
+      const res = simplify(a * c, b * d);
+      q = {
+        type, visual: 'chocolate-mult',
+        vdata: { rows: b, cols: d, a, b, c, d },
+        qHTML: 'حاصل ضرب زیر چند است؟',
+        eqParts: [fracHTML(a, b), '<span class="op-symbol">×</span>', fracHTML(c, d), '<span class="op-symbol">=</span>', 'SLOT'],
+        correct: { n: res.n, d: res.d },
+        distractors: [
+          { n: a + c, d: b + d }, { n: a * c, d: b + d }, { n: a + c, d: b * d }
+        ],
+        hint: 'برای ضرب کسرها: صورت×صورت و مخرج×مخرج. سپس ساده کن.',
+        explain: fracHTML(a, b) + ' × ' + fracHTML(c, d) + ' = ' + fracHTML(a*c, b*d) + ' = ' + simpleFracHTML(res.n, res.d)
+      };
+    }
+    else if (type === 'div-frac') {
+      const b = randInt(2, 5), d = randInt(2, 5);
+      const a = randInt(1, b - 1), c = randInt(1, d - 1);
+      const res = simplify(a * d, b * c);
+      q = {
+        type, visual: 'division-bars',
+        vdata: { a, b, c, d },
+        qHTML: 'حاصل تقسیم زیر چند است؟',
+        eqParts: [fracHTML(a, b), '<span class="op-symbol">÷</span>', fracHTML(c, d), '<span class="op-symbol">=</span>', 'SLOT'],
+        correct: { n: res.n, d: res.d },
+        distractors: [
+          { n: a * c, d: b * d }, { n: b * c, d: a * d }, { n: a + d, d: b + c }
+        ],
+        hint: 'برای تقسیم کسرها: کسر اول × معکوس کسر دوم.',
+        explain: fracHTML(a, b) + ' ÷ ' + fracHTML(c, d) + ' = ' + fracHTML(a, b) + ' × ' + fracHTML(d, c) + ' = ' + fracHTML(a*d, b*c) + ' = ' + simpleFracHTML(res.n, res.d)
+      };
+    }
+    else if (type === 'mult-mixed') {
+      const w1 = randInt(1, 2), d1 = randInt(2, 4), n1 = randInt(1, d1 - 1);
+      const w2 = randInt(1, 2), d2 = randInt(2, 4), n2 = randInt(1, d2 - 1);
+      const n1f = w1 * d1 + n1, n2f = w2 * d2 + n2;
+      const res = simplify(n1f * n2f, d1 * d2);
+      q = {
+        type, visual: 'bar-mixed',
+        vdata: { w1, n1, d1, w2, n2, d2, op: '×' },
+        qHTML: 'حاصل ضرب زیر چند است؟',
+        eqParts: [mixedFracHTML(w1, n1, d1), '<span class="op-symbol">×</span>', mixedFracHTML(w2, n2, d2), '<span class="op-symbol">=</span>', 'SLOT'],
+        correct: { n: res.n, d: res.d },
+        distractors: [
+          { n: w1 * w2, d: 1 }, { n: n1f + n2f, d: d1 + d2 }, { n: n1f * n2f, d: d1 * d2 + 2 }
+        ],
+        hint: 'اول کسر مخلوط را به کسر ساده تبدیل کن: ' +
+              mixedFracHTML(w1, n1, d1) + ' = ' + fracHTML(n1f, d1) +
+              ' و ' + mixedFracHTML(w2, n2, d2) + ' = ' + fracHTML(n2f, d2),
+        explain: fracHTML(n1f, d1) + ' × ' + fracHTML(n2f, d2) + ' = ' + fracHTML(n1f*n2f, d1*d2) + ' = ' + simpleFracHTML(res.n, res.d)
+      };
+    }
+    else if (type === 'div-mixed') {
+      const w1 = randInt(1, 3), d1 = randInt(2, 4), n1 = randInt(1, d1 - 1);
+      const w2 = randInt(1, 2), d2 = randInt(2, 4), n2 = randInt(1, d2 - 1);
+      const n1f = w1 * d1 + n1, n2f = w2 * d2 + n2;
+      const res = simplify(n1f * d2, d1 * n2f);
+      q = {
+        type, visual: 'bar-mixed-div',
+        vdata: { w1, n1, d1, w2, n2, d2 },
+        qHTML: 'حاصل تقسیم زیر چند است؟',
+        eqParts: [mixedFracHTML(w1, n1, d1), '<span class="op-symbol">÷</span>', mixedFracHTML(w2, n2, d2), '<span class="op-symbol">=</span>', 'SLOT'],
+        correct: { n: res.n, d: res.d },
+        distractors: [
+          { n: w1 + w2, d: 1 }, { n: n1f * n2f, d: d1 * d2 }, { n: n1f * d2, d: d1 * n2f + 2 }
+        ],
+        hint: 'کسر اول × معکوس کسر دوم: ' +
+              mixedFracHTML(w1, n1, d1) + ' = ' + fracHTML(n1f, d1) +
+              ' و ' + mixedFracHTML(w2, n2, d2) + ' = ' + fracHTML(n2f, d2),
+        explain: fracHTML(n1f, d1) + ' ÷ ' + fracHTML(n2f, d2) + ' = ' + fracHTML(n1f*d2, d1*n2f) + ' = ' + simpleFracHTML(res.n, res.d)
+      };
+    }
+    else if (type === 'mult-dec') {
+      const decs = [
+        {a: 0.5, b: 0.4}, {a: 0.2, b: 0.3}, {a: 1.2, b: 0.5},
+        {a: 0.6, b: 0.5}, {a: 0.7, b: 0.3}
+      ];
+      const pick = decs[randInt(0, decs.length - 1)];
+      const prod = +(pick.a * pick.b).toFixed(4);
+      q = {
+        type, visual: 'bar-dec',
+        vdata: { a: pick.a, b: pick.b, op: '×' },
+        qHTML: 'حاصل ضرب اعشاری زیر چند است؟',
+        eqParts: [decFracHTML(pick.a), '<span class="op-symbol">×</span>', decFracHTML(pick.b), '<span class="op-symbol">=</span>', 'SLOT-DEC'],
+        correct: { dec: prod },
+        correctDisplay: String(prod),
+        distractors: [
+          String(+(prod * 10).toFixed(4)),
+          String(+(prod / 10).toFixed(4)),
+          String(+(pick.a + pick.b).toFixed(4))
+        ],
+        hint: decToFracHint(pick.a) + ' و ' + decToFracHint(pick.b),
+        explain: decToFracExplain(pick.a) + ' × ' + decToFracExplain(pick.b) + ' = <b class="math-ltr">' + toPersianDecimal(prod) + '</b>',
+        isDecimal: true
+      };
+    }
+    else {
+      const decs = [
+        {a: 0.8, b: 0.2}, {a: 0.6, b: 0.3}, {a: 0.9, b: 0.3},
+        {a: 2.0, b: 0.5}, {a: 1.5, b: 0.5}
+      ];
+      const pick = decs[randInt(0, decs.length - 1)];
+      const quot = +(pick.a / pick.b).toFixed(4);
+      q = {
+        type, visual: 'bar-dec',
+        vdata: { a: pick.a, b: pick.b, op: '÷' },
+        qHTML: 'حاصل تقسیم اعشاری زیر چند است؟',
+        eqParts: [decFracHTML(pick.a), '<span class="op-symbol">÷</span>', decFracHTML(pick.b), '<span class="op-symbol">=</span>', 'SLOT-DEC'],
+        correct: { dec: quot },
+        correctDisplay: String(quot),
+        distractors: [
+          String(+(quot * 10).toFixed(4)),
+          String(+(quot / 10).toFixed(4)),
+          String(+(pick.a * pick.b).toFixed(4))
+        ],
+        hint: decToFracHint(pick.a) + ' و ' + decToFracHint(pick.b),
+        explain: decToFracExplain(pick.a) + ' ÷ ' + decToFracExplain(pick.b) + ' = <b class="math-ltr">' + toPersianDecimal(quot) + '</b>',
+        isDecimal: true
+      };
+    }
+    return q;
+  }
+
+  // ============ وضعیت ============
+  const state = {
+    current: 0, total: 15, score: 0,
+    correctCount: 0, answeredCount: 0,
+    question: null, slots: []
+  };
+
+  const $ = id => document.getElementById(id);
+  const container = $('gameContainer');
+  const scoreEl = $('score');
+  const qNumEl = $('qNum');
+  const accuracyEl = $('accuracy');
+  const progressEl = $('progressFill');
+  const qTextEl = $('questionText');
+  const visualEl = $('visualArea');
+  const hintEl = $('hint');
+  const eqAreaEl = $('equationArea');
+  const dragAreaEl = $('draggablesArea');
+  const checkBtn = $('checkBtn');
+  const resetBtn = $('resetBtn');
+  const nextBtn = $('nextBtn');
+  const feedbackEl = $('feedback');
+
+  // ============ تابع کمکی ساخت میله ============
+  function createBar(totalSegs, filledSegs, color, width) {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.width = (width || 180) + 'px';
+    for (let i = 0; i < totalSegs; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'bar-seg' + (i < filledSegs ? ' ' + color : '');
+      bar.appendChild(seg);
+    }
+    return bar;
+  }
+
+  // ============ رندر بصری ============
+  function renderVisual(q) {
+    visualEl.innerHTML = '';
+    const v = q.visual;
+    const d = q.vdata;
+
+    // ⭐⭐ ضرب کسرها: تخته شکلات (با خانه‌های رنگ‌نشده کرم و کادر واضح)
+    if (v === 'chocolate-mult') {
+      const rows = d.rows;
+      const cols = d.cols;
+      const total = rows * cols;
+
+      const step1 = Math.round((d.a / d.b) * total);
+      const step2 = Math.round((d.c / d.d) * step1);
+
+      const grid = document.createElement('div');
+      grid.className = 'chocolate';
+      grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+
+      for (let i = 0; i < total; i++) {
+        const p = document.createElement('div');
+        p.className = 'choc-piece';
+        if (i < step2) p.classList.add('on');
+        else if (i < step1) p.classList.add('on-green');
+        grid.appendChild(p);
+      }
+      visualEl.appendChild(grid);
+
+      const label = document.createElement('div');
+      label.className = 'visual-label';
+      label.innerHTML =
+        '🟪 ' + toPersian(step2) + ' خانه (خورده‌شده)<br>' +
+        '🟩 ' + toPersian(step1 - step2) + ' خانه (باقی‌مانده از رنگ‌شده)<br>' +
+        '🟨 ' + toPersian(total - step1) + ' خانه رنگ‌نشده';
+      visualEl.appendChild(label);
+
+      const caption = document.createElement('div');
+      caption.className = 'visual-caption';
+      caption.innerHTML = '🎯 تخته شکلات ' + toPersian(rows) + ' × ' + toPersian(cols) +
+        ' = ' + toPersian(total) + ' خانه';
+      visualEl.appendChild(caption);
+    }
+    // ⭐⭐ تقسیم کسرها: جعبه تقسیم دو نوار
+    else if (v === 'division-bars') {
+      const box = document.createElement('div');
+      box.className = 'division-box';
+
+      const row1 = document.createElement('div');
+      row1.className = 'div-row';
+
+      const label1 = document.createElement('div');
+      label1.className = 'div-label';
+      label1.innerHTML = 'کسر اول';
+      row1.appendChild(label1);
+
+      const bar1 = createBar(d.b, d.a, 'fill-purple', 220);
+      row1.appendChild(bar1);
+      box.appendChild(row1);
+
+      const sub1 = document.createElement('div');
+      sub1.style.cssText = 'font-size:0.85em;color:#764ba2;font-weight:bold;direction:ltr;';
+      sub1.innerHTML = fracHTML(d.a, d.b) + ' = ' + toPersian(d.a) + ' از ' + toPersian(d.b) + ' قسمت';
+      box.appendChild(sub1);
+
+      const opRow = document.createElement('div');
+      opRow.style.cssText = 'font-size:1.5em;color:#764ba2;font-weight:bold;margin:4px 0;';
+      opRow.textContent = '÷';
+      box.appendChild(opRow);
+
+      const row2 = document.createElement('div');
+      row2.className = 'div-row';
+
+      const label2 = document.createElement('div');
+      label2.className = 'div-label';
+      label2.innerHTML = 'کسر دوم';
+      row2.appendChild(label2);
+
+      const bar2 = createBar(d.d, d.c, 'fill-orange', 220);
+      row2.appendChild(bar2);
+      box.appendChild(row2);
+
+      const sub2 = document.createElement('div');
+      sub2.style.cssText = 'font-size:0.85em;color:#e67e22;font-weight:bold;direction:ltr;';
+      sub2.innerHTML = fracHTML(d.c, d.d) + ' = ' + toPersian(d.c) + ' از ' + toPersian(d.d) + ' قسمت';
+      box.appendChild(sub2);
+
+      visualEl.appendChild(box);
+
+      const caption = document.createElement('div');
+      caption.className = 'visual-caption';
+      caption.innerHTML = '🎯 می‌خواهیم بدانیم چند تا ' + fracHTML(d.c, d.d) +
+        ' در ' + fracHTML(d.a, d.b) + ' جا می‌گیرد؟';
+      visualEl.appendChild(caption);
+    }
+    // ⭐ عدد مخلوط (ضرب)
+    else if (v === 'bar-mixed') {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;';
+
+      const makeMixedRow = (w, n, dd, color) => {
+        const container = document.createElement('div');
+        container.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;';
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;direction:ltr;';
+
+        for (let k = 0; k < w; k++) {
+          const b = document.createElement('div');
+          b.className = 'bar';
+          b.style.width = '70px';
+          b.style.height = '30px';
+          for (let i = 0; i < dd; i++) {
+            const s = document.createElement('div');
+            s.className = 'bar-seg ' + color;
+            b.appendChild(s);
+          }
+          row.appendChild(b);
+        }
+        if (n > 0) {
+          const b2 = document.createElement('div');
+          b2.className = 'bar';
+          b2.style.width = '70px';
+          b2.style.height = '30px';
+          for (let i = 0; i < dd; i++) {
+            const s = document.createElement('div');
+            s.className = 'bar-seg' + (i < n ? ' ' + color : '');
+            b2.appendChild(s);
+          }
+          row.appendChild(b2);
+        }
+        container.appendChild(row);
+        return container;
+      };
+
+      const n1f = d.w1 * d.d1 + d.n1;
+      const row1 = makeMixedRow(d.w1, d.n1, d.d1, 'fill-purple');
+      const lab1 = document.createElement('div');
+      lab1.style.cssText = 'font-size:0.85em;color:#764ba2;font-weight:bold;direction:ltr;';
+      lab1.innerHTML = mixedFracHTML(d.w1, d.n1, d.d1) + ' = ' + fracHTML(n1f, d.d1);
+      row1.appendChild(lab1);
+      wrap.appendChild(row1);
+
+      const opT = document.createElement('div');
+      opT.textContent = d.op;
+      opT.style.cssText = 'font-size:1.6em;font-weight:bold;color:#764ba2;';
+      wrap.appendChild(opT);
+
+      const n2f = d.w2 * d.d2 + d.n2;
+      const row2 = makeMixedRow(d.w2, d.n2, d.d2, 'fill-green');
+      const lab2 = document.createElement('div');
+      lab2.style.cssText = 'font-size:0.85em;color:#27ae60;font-weight:bold;direction:ltr;';
+      lab2.innerHTML = mixedFracHTML(d.w2, d.n2, d.d2) + ' = ' + fracHTML(n2f, d.d2);
+      row2.appendChild(lab2);
+      wrap.appendChild(row2);
+
+      visualEl.appendChild(wrap);
+
+      const caption = document.createElement('div');
+      caption.className = 'visual-caption';
+      caption.innerHTML = '🎯 هر میله به ' + toPersian(d.d1) + ' قسمت مساوی تقسیم شده';
+      visualEl.appendChild(caption);
+    }
+    // ⭐ تقسیم عدد مخلوط: جعبه دو نوار
+    else if (v === 'bar-mixed-div') {
+      const n1f = d.w1 * d.d1 + d.n1;
+      const n2f = d.w2 * d.d2 + d.n2;
+
+      const box = document.createElement('div');
+      box.className = 'division-box';
+
+      const row1 = document.createElement('div');
+      row1.className = 'div-row';
+
+      const label1 = document.createElement('div');
+      label1.className = 'div-label';
+      label1.innerHTML = 'کسر اول';
+      row1.appendChild(label1);
+
+      const bars1 = document.createElement('div');
+      bars1.style.cssText = 'display:flex;gap:4px;direction:ltr;';
+      for (let k = 0; k < d.w1; k++) {
+        const b = document.createElement('div');
+        b.className = 'bar';
+        b.style.width = '50px';
+        b.style.height = '28px';
+        for (let i = 0; i < d.d1; i++) {
+          const s = document.createElement('div');
+          s.className = 'bar-seg fill-purple';
+          b.appendChild(s);
+        }
+        bars1.appendChild(b);
+      }
+      if (d.n1 > 0) {
+        const b2 = document.createElement('div');
+        b2.className = 'bar';
+        b2.style.width = '50px';
+        b2.style.height = '28px';
+        for (let i = 0; i < d.d1; i++) {
+          const s = document.createElement('div');
+          s.className = 'bar-seg' + (i < d.n1 ? ' fill-purple' : '');
+          b2.appendChild(s);
+        }
+        bars1.appendChild(b2);
+      }
+      row1.appendChild(bars1);
+      box.appendChild(row1);
+
+      const sub1 = document.createElement('div');
+      sub1.style.cssText = 'font-size:0.8em;color:#764ba2;font-weight:bold;direction:ltr;';
+      sub1.innerHTML = mixedFracHTML(d.w1, d.n1, d.d1) + ' = ' + fracHTML(n1f, d.d1);
+      box.appendChild(sub1);
+
+      const opRow = document.createElement('div');
+      opRow.style.cssText = 'font-size:1.5em;color:#764ba2;font-weight:bold;margin:4px 0;';
+      opRow.textContent = '÷';
+      box.appendChild(opRow);
+
+      const row2 = document.createElement('div');
+      row2.className = 'div-row';
+
+      const label2 = document.createElement('div');
+      label2.className = 'div-label';
+      label2.innerHTML = 'کسر دوم';
+      row2.appendChild(label2);
+
+      const bars2 = document.createElement('div');
+      bars2.style.cssText = 'display:flex;gap:4px;direction:ltr;';
+      for (let k = 0; k < d.w2; k++) {
+        const b = document.createElement('div');
+        b.className = 'bar';
+        b.style.width = '50px';
+        b.style.height = '28px';
+        for (let i = 0; i < d.d2; i++) {
+          const s = document.createElement('div');
+          s.className = 'bar-seg fill-green';
+          b.appendChild(s);
+        }
+        bars2.appendChild(b);
+      }
+      if (d.n2 > 0) {
+        const b2 = document.createElement('div');
+        b2.className = 'bar';
+        b2.style.width = '50px';
+        b2.style.height = '28px';
+        for (let i = 0; i < d.d2; i++) {
+          const s = document.createElement('div');
+          s.className = 'bar-seg' + (i < d.n2 ? ' fill-green' : '');
+          b2.appendChild(s);
+        }
+        bars2.appendChild(b2);
+      }
+      row2.appendChild(bars2);
+      box.appendChild(row2);
+
+      const sub2 = document.createElement('div');
+      sub2.style.cssText = 'font-size:0.8em;color:#27ae60;font-weight:bold;direction:ltr;';
+      sub2.innerHTML = mixedFracHTML(d.w2, d.n2, d.d2) + ' = ' + fracHTML(n2f, d.d2);
+      box.appendChild(sub2);
+
+      visualEl.appendChild(box);
+
+      const caption = document.createElement('div');
+      caption.className = 'visual-caption';
+      caption.innerHTML = '🎯 هر میله به ' + toPersian(d.d1) + ' قسمت مساوی تقسیم شده';
+      visualEl.appendChild(caption);
+    }
+    // ⭐⭐ اعشاری: میله با ۱۰ خانه
+    else if (v === 'bar-dec') {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;';
+
+      const mkBar = (val, color, label) => {
+        const box = document.createElement('div');
+        box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;';
+
+        const b = document.createElement('div');
+        b.className = 'bar';
+        b.style.width = '180px';
+        b.style.height = '32px';
+        b.style.direction = 'ltr';
+
+        const totalSegs = 10;
+        let filled = 0;
+        if (val >= 1) {
+          filled = Math.min(10, Math.round(val * 10));
+        } else {
+          filled = Math.round(val * 10);
+        }
+
+        for (let i = 0; i < totalSegs; i++) {
+          const s = document.createElement('div');
+          s.className = 'bar-seg' + (i < filled ? ' ' + color : '');
+          b.appendChild(s);
+        }
+
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'font-weight:bold;color:#333;font-size:1em;';
+        lbl.innerHTML = label;
+
+        box.appendChild(b);
+        box.appendChild(lbl);
+        return box;
+      };
+
+      wrap.appendChild(mkBar(d.a, 'fill-purple', decFracHTML(d.a)));
+      const opT = document.createElement('div');
+      opT.textContent = d.op;
+      opT.style.cssText = 'font-size:1.5em;font-weight:bold;color:#764ba2;';
+      wrap.appendChild(opT);
+      wrap.appendChild(mkBar(d.b, 'fill-green', decFracHTML(d.b)));
+
+      visualEl.appendChild(wrap);
+
+      const caption = document.createElement('div');
+      caption.className = 'visual-caption';
+      caption.innerHTML = '🎯 هر میله به ' + toPersian(10) +
+        ' قسمت مساوی تقسیم شده (هر قسمت = ' + toPersianDecimal('0.1') + ')';
+      visualEl.appendChild(caption);
+    }
+  }
+
+  function renderEquation(q) {
+    eqAreaEl.innerHTML = '';
+    state.slots = [];
+    q.eqParts.forEach(part => {
+      if (part === 'SLOT') {
+        const slot = document.createElement('div');
+        slot.className = 'drop-slot';
+        slot.innerHTML = '<span class="slot-hint">اینجا<br>بگذار</span>';
+        eqAreaEl.appendChild(slot);
+        state.slots.push({ el: slot, filledWith: null, isDecimal: false });
+      }
+      else if (part === 'SLOT-DEC') {
+        const slot = document.createElement('div');
+        slot.className = 'drop-slot';
+        slot.style.direction = 'ltr';
+        slot.innerHTML = '<span class="slot-hint">اینجا<br>بگذار</span>';
+        eqAreaEl.appendChild(slot);
+        state.slots.push({ el: slot, filledWith: null, isDecimal: true });
+      }
+      else {
+        const span = document.createElement('span');
+        span.innerHTML = part;
+        eqAreaEl.appendChild(span);
+      }
+    });
+  }
+
+  function renderDraggables(q) {
+    dragAreaEl.innerHTML = '';
+    const options = [];
+    if (q.isDecimal) {
+      options.push({ display: toPersianDecimal(q.correctDisplay), value: q.correctDisplay, isDecimal: true });
+      q.distractors.forEach(d => {
+        options.push({ display: toPersianDecimal(d), value: d, isDecimal: true });
+      });
+    } else {
+      options.push({ display: simpleFracHTML(q.correct.n, q.correct.d), value: fracKey(q.correct.n, q.correct.d) });
+      q.distractors.forEach(d => {
+        const dd = simplify(d.n, d.d);
+        options.push({ display: simpleFracHTML(dd.n, dd.d), value: fracKey(dd.n, dd.d) });
+      });
+    }
+
+    const seen = new Set();
+    const uniqueOpts = [];
+    options.forEach(o => {
+      if (!seen.has(o.value)) { seen.add(o.value); uniqueOpts.push(o); }
+    });
+
+    let attempts = 0;
+    while (uniqueOpts.length < 4 && attempts < 50) {
+      attempts++;
+      if (q.isDecimal) {
+        const fake = String(+(Math.random() * 5).toFixed(2));
+        if (!seen.has(fake)) {
+          seen.add(fake);
+          uniqueOpts.push({ display: toPersianDecimal(fake), value: fake, isDecimal: true });
+        }
+      } else {
+        const fk = fracKey(randInt(1, 9), randInt(2, 9));
+        if (!seen.has(fk)) {
+          seen.add(fk);
+          const p = fk.split('/');
+          uniqueOpts.push({
+            display: p.length === 1 ? '<b>' + toPersian(p[0]) + '</b>' : fracHTML(+p[0], +p[1]),
+            value: fk
+          });
+        }
+      }
+    }
+
+    for (let i = uniqueOpts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [uniqueOpts[i], uniqueOpts[j]] = [uniqueOpts[j], uniqueOpts[i]];
+    }
+
+    uniqueOpts.forEach(opt => {
+      const div = document.createElement('div');
+      div.className = 'draggable';
+      div.setAttribute('draggable', 'true');
+      div.setAttribute('data-value', opt.value);
+      div.innerHTML = opt.display;
+
+      div.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', opt.value);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      attachTouchDrag(div, opt.value);
+
+      div.addEventListener('click', function() {
+        if (div.classList.contains('used')) return;
+        const emptySlot = state.slots.find(s => s.filledWith === null);
+        if (emptySlot) fillSlot(emptySlot, opt.value, div);
+      });
+
+      dragAreaEl.appendChild(div);
+    });
+  }
+
+  function fillSlot(slotObj, value, draggableEl) {
+    if (slotObj.filledWith !== null) {
+      const prevEl = dragAreaEl.querySelector('[data-value="' + CSS.escape(slotObj.filledWith) + '"]');
+      if (prevEl) prevEl.classList.remove('used');
+    }
+    slotObj.filledWith = value;
+    const slot = slotObj.el;
+    slot.classList.add('filled');
+    slot.classList.remove('wrong', 'correct');
+
+    if (slotObj.isDecimal) {
+      slot.innerHTML = '<span style="font-size:1.1em;direction:ltr;">' + toPersianDecimal(value) + '</span>';
+    } else {
+      const parts = String(value).split('/');
+      if (parts.length === 1) {
+        slot.innerHTML = '<span style="font-size:1.2em;">' + toPersian(parts[0]) + '</span>';
+      } else {
+        slot.innerHTML = '<span class="slot-frac"><span class="num">' + toPersian(parts[0]) +
+                        '</span><span class="den">' + toPersian(parts[1]) + '</span></span>';
+      }
+    }
+    if (draggableEl) draggableEl.classList.add('used');
+    updateCheckButton();
+  }
+
+  function clearSlot(slotObj) {
+    if (slotObj.filledWith === null) return;
+    const prevEl = dragAreaEl.querySelector('[data-value="' + CSS.escape(slotObj.filledWith) + '"]');
+    if (prevEl) prevEl.classList.remove('used');
+    slotObj.filledWith = null;
+    slotObj.el.classList.remove('filled', 'wrong', 'correct');
+    slotObj.el.innerHTML = '<span class="slot-hint">اینجا<br>بگذار</span>';
+    updateCheckButton();
+  }
+
+  function updateCheckButton() {
+    checkBtn.disabled = !state.slots.every(s => s.filledWith !== null);
+  }
+
+  function attachTouchDrag(el, value) {
+    let ghost = null;
+    el.addEventListener('touchstart', function(e) {
+      if (el.classList.contains('used')) return;
+      const touch = e.touches[0];
+      ghost = el.cloneNode(true);
+      ghost.style.cssText = 'position:fixed;left:' + (touch.clientX - 40) + 'px;top:' + (touch.clientY - 25) + 'px;pointer-events:none;z-index:9999;opacity:0.85;transform:scale(1.1);';
+      document.body.appendChild(ghost);
+      el.style.opacity = '0.4';
+      e.preventDefault();
+    }, { passive: false });
+
+    el.addEventListener('touchmove', function(e) {
+      if (!ghost) return;
+      const touch = e.touches[0];
+      ghost.style.left = (touch.clientX - 40) + 'px';
+      ghost.style.top = (touch.clientY - 25) + 'px';
+      const el2 = document.elementFromPoint(touch.clientX, touch.clientY);
+      document.querySelectorAll('.drop-slot').forEach(s => s.classList.remove('dragover'));
+      if (el2 && el2.closest('.drop-slot')) el2.closest('.drop-slot').classList.add('dragover');
+      e.preventDefault();
+    }, { passive: false });
+
+    el.addEventListener('touchend', function(e) {
+      if (!ghost) return;
+      const touch = e.changedTouches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const slot = target ? target.closest('.drop-slot') : null;
+      document.querySelectorAll('.drop-slot').forEach(s => s.classList.remove('dragover'));
+      ghost.remove(); ghost = null;
+      el.style.opacity = '';
+      if (slot) {
+        const idx = Array.from(eqAreaEl.querySelectorAll('.drop-slot')).indexOf(slot);
+        if (idx >= 0 && state.slots[idx]) fillSlot(state.slots[idx], value, el);
+      }
+    });
+  }
+
+  function attachDropListeners() {
+    document.querySelectorAll('.drop-slot').forEach(slot => {
+      slot.addEventListener('dragover', function(e) {
+        e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+        slot.classList.add('dragover');
+      });
+      slot.addEventListener('dragleave', function() { slot.classList.remove('dragover'); });
+      slot.addEventListener('drop', function(e) {
+        e.preventDefault();
+        slot.classList.remove('dragover');
+        const value = e.dataTransfer.getData('text/plain');
+        const idx = Array.from(eqAreaEl.querySelectorAll('.drop-slot')).indexOf(slot);
+        if (idx >= 0 && state.slots[idx]) {
+          const dragEl = dragAreaEl.querySelector('[data-value="' + CSS.escape(value) + '"]');
+          fillSlot(state.slots[idx], value, dragEl);
+        }
+      });
+      slot.addEventListener('click', function() {
+        const idx = Array.from(eqAreaEl.querySelectorAll('.drop-slot')).indexOf(slot);
+        if (idx >= 0 && state.slots[idx]) clearSlot(state.slots[idx]);
+      });
+    });
+  }
+
+  function renderQuestion() {
+    const q = generateQuestion();
+    state.question = q;
+
+    qNumEl.textContent = 'سوال ' + toPersian(state.current + 1) + ' از ' + toPersian(state.total);
+    progressEl.style.width = (state.current / state.total * 100) + '%';
+
+    const acc = state.answeredCount > 0
+      ? Math.round(state.correctCount / state.answeredCount * 100) : 0;
+    accuracyEl.textContent = 'دقت: ' + toPersian(acc) + '٪';
+
+    qTextEl.innerHTML = q.qHTML;
+    renderVisual(q);
+    hintEl.innerHTML = '💡 ' + q.hint;
+    renderEquation(q);
+    renderDraggables(q);
+
+    setTimeout(attachDropListeners, 0);
+
+    checkBtn.disabled = true;
+    checkBtn.style.display = 'inline-block';
+    nextBtn.classList.remove('show');
+    feedbackEl.className = 'feedback';
+    feedbackEl.innerHTML = '';
+  }
+
+  checkBtn.addEventListener('click', function() {
+    if (state.slots.some(s => s.filledWith === null)) return;
+    const q = state.question;
+    const userAns = state.slots[0].filledWith;
+
+    let isCorrect = false;
+    if (q.isDecimal) {
+      isCorrect = String(userAns) === String(q.correctDisplay);
+    } else {
+      isCorrect = userAns === fracKey(q.correct.n, q.correct.d);
+    }
+
+    const slotEl = state.slots[0].el;
+    slotEl.classList.remove('filled');
+    slotEl.classList.add(isCorrect ? 'correct' : 'wrong');
+
+    state.answeredCount++;
+    if (isCorrect) {
+      state.correctCount++;
+      state.score += 10;
+      scoreEl.textContent = toPersian(state.score);
+    }
+
+    const acc = Math.round(state.correctCount / state.answeredCount * 100);
+    accuracyEl.textContent = 'دقت: ' + toPersian(acc) + '٪';
+
+    if (isCorrect) {
+      feedbackEl.className = 'feedback ok show';
+      feedbackEl.innerHTML = '✅ <b>آفرین!</b> پاسخ درست است.<br>' + q.explain;
+    } else {
+      const correctDisp = q.isDecimal
+        ? '<b class="math-ltr">' + toPersianDecimal(q.correctDisplay) + '</b>'
+        : simpleFracHTML(q.correct.n, q.correct.d);
+      feedbackEl.className = 'feedback no show';
+      feedbackEl.innerHTML = '❌ <b>پاسخ درست: ' + correctDisp + '</b><br>' + q.explain;
+    }
+
+    checkBtn.style.display = 'none';
+    nextBtn.classList.add('show');
+    nextBtn.textContent = (state.current === state.total - 1) ? 'پایان بازی 🏁' : 'سوال بعدی ➜';
+  });
+
+  resetBtn.addEventListener('click', function() {
+    state.slots.forEach(s => clearSlot(s));
+    feedbackEl.className = 'feedback';
+    feedbackEl.innerHTML = '';
+    checkBtn.disabled = true;
+  });
+
+  nextBtn.addEventListener('click', function() {
+    state.current++;
+    if (state.current >= state.total) {
+      progressEl.style.width = '100%';
+      renderEndScreen();
+    } else {
+      renderQuestion();
+    }
+  });
+
+  function renderEndScreen() {
+    const maxScore = state.total * 10;
+    const percent = Math.round(state.score / maxScore * 100);
+    let message, emoji;
+    if (percent === 100) { message = 'عالی! تمام سوالات را درست پاسخ دادی!'; emoji = '🏆'; }
+    else if (percent >= 80) { message = 'خیلی خوب بود! تسلط خوبی داری.'; emoji = '🌟'; }
+    else if (percent >= 60) { message = 'خوب بود، با کمی تمرین بهتر می‌شوی.'; emoji = '👍'; }
+    else { message = 'نیاز به تمرین بیشتر داری. دوباره تلاش کن!'; emoji = '💪'; }
+
+    container.innerHTML =
+      '<div class="end-screen">' +
+        '<h2>' + emoji + ' پایان بازی!</h2>' +
+        '<p>امتیاز نهایی: <b>' + toPersian(state.score) + '</b> از ' + toPersian(maxScore) + '</p>' +
+        '<p>درصد موفقیت: <b>' + toPersian(percent) + '٪</b></p>' +
+        '<p>' + message + '</p>' +
+        '<button class="restart-btn" id="restartBtn">🔄 بازی مجدد</button>' +
+      '</div>';
+
+    document.getElementById('restartBtn').addEventListener('click', function() {
+      location.reload();
+    });
+  }
+
+  renderQuestion();
+
+})();
+</script>
+</body>
+</html>
